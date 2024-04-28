@@ -62,7 +62,7 @@ function simulateMove(button, target, states) {
 }
 
 // return buttons that collide with button being at target
-export function getCollisionsFromInvalidState(button, target, buttons) {
+function getCollisionsFromInvalidState(button, target, buttons) {
 	let collisions = new Array(); collisions.length = 0;
 	for (let i = target; i - target < button.width; i++) {
 		buttons.forEach(button => {
@@ -77,7 +77,7 @@ export function getCollisionsFromInvalidState(button, target, buttons) {
 }
 
 // assumes buttons are sorted by they offset and non overlapping
-export function getCollisions(button, target, buttons) {
+function getCollisions(button, target, buttons) {
 	const collisions = []; collisions.length = 0;
 	let i = 0;
 	for (i; i < buttons.length; i++) {
@@ -90,4 +90,56 @@ export function getCollisions(button, target, buttons) {
 		}
 	}
 	return collisions;
+}
+
+function generateCellsState(buttons) {
+	let r = new Array(navbarWidth.length).fill(FREE);
+	buttons.forEach(button => {
+		if (!validButton(button)) {
+			console.log("generateCellsState: impossible case reached");
+		}
+		for (var j = 1; j < button.width; j++) { r[button.index + j] = BUSY; }
+	});
+	buttons.forEach(button => { r[button.index] = TAKEN; });
+	return r;
+}
+
+
+function pprint_states(states) {
+	let r = "---------------\n";
+	if (states.length === 0) { return r; }
+	r += stateToString[states[0]];
+	for (var i = 1; i < states.length; i++) {
+		r += ", " + stateToString[states[i]];
+	}
+	return r;
+}
+
+function validButton(button) {
+	return button.index >= 0 && button.index + button.width <= navbarWidth;
+}
+
+
+function pprint_buttons(buttons) {
+	return buttons.map((button, idx) => 
+		`Button ${idx}:\n` +
+		`  Div: ${button.div.id}\n` +
+		`  Index: ${button.index}\n` +
+		`  Width: ${button.width}\n`
+	).join("\n");
+}
+
+function getButtonIndex(i, states) {
+	if (states[i] === FREE) { return -1; }
+	if (states[i] === TAKEN) { return i; }
+	while (i > 0) {
+		i--;
+		if (states[i] === TAKEN) { return i; }
+	}
+	console.log("getButtonIndex: impossible case reached");
+	return -1;
+}
+
+function getButtonByIndex(buttons, i) {
+	return buttons.find(button => button.index === i);
 }
