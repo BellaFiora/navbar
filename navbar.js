@@ -1,5 +1,7 @@
+'use strict';
+
 import {
-	Button,
+	NavbarButton,
 	initButton
 } from './button.js';
 
@@ -7,22 +9,92 @@ import {
 //           Utils            //
 // ========================== //
 
-function computeMinNavBarWidth(buttonsWidth, buttonsDefaultIndicies) {
+// caller is responsible for the creation of the div the navbar will be associated to
+// name will be prepended to the className of all buttons of the navbar and their ids
+
+// if name = 'coolNavbar' then its buttons' className would be 'coolNavbar-buttons' and their ids `coolNavbar-button${i}`
+export function initNavbar(name, navbarDiv, cellWidth, cellPixelWidth, dragThreshold, buttonsCellWidth, buttonsDefaultIndicies, buttonsCallbacks) {
+
+	// check that arguments are valid
+
+	if (cellPixelWidth % 2 === 1) {
+		throw new Error('initNavbar: prefer even cellPixelWidth');
+	}
+
+	let a = buttonsCellWidth.length;
+	let b = buttonsDefaultIndicies.length;
+	let c = buttonsCallbacks.length;
+	if (a === 0 || b === 0 || c === 0 || a !== b || b !== c) {
+		throw new Error('initNavbar: buttonsCellWidth and buttonsDefaultIndicies must be of the same length');
+	}
+
+	const minNavBarNbCells = computeMinNavBarWidth(buttonsCellWidth, buttonsDefaultIndicies);
+	if (minNavBarNbCells > cellWidth) {
+		throw new Error('initNavbar: navbar cellWidth too short for the requested buttons');
+	}
+
+	if (detectOverlap(buttonsCellWidth, buttonsDefaultIndicies, minNavBarNbCells)) {
+		throw new Error('initNavbar: overlapping buttons');
+	}
+
+	// init
+
+	const navbar = new Navbar(navbarDiv, cellWidth, cellPixelWidth, dragThreshold);
+	for (let i = 0; i < buttonsCellWidth.length; i++) {
+		const index = buttonsDefaultIndicies[i];
+		const buttonDiv = document.createElement('div');
+		buttonDiv.className = `${name}-buttons`;
+		buttonDiv.id = `${name}-button${i}`;
+		buttonDiv.style.left = `${index * cellPixelWidth}px`;
+		buttonDiv.callback = buttonsCallbacks[i];
+		// some default innerText
+		buttonDiv.innerText = `Button ${i}`;
+		navbarDiv.appendChild(buttonDiv);
+		navbar.addButton(initButton(buttonDiv, buttonsDefaultIndicies[i], buttonsCellWidth[i], navbar));
+	}
+
+	navbarDiv.addEventListener('mouseup', (event) => {
+		if (navbar.activeButton === null) { return; }
+		if (navbar.moveActiveButton(event)) {
+			// console.log(`try moving button at offset ${navbar.initialoffsetX} to offset ${navbar.activeButton.div.offsetLeft}`);
+			// I hate JS
+			navbar.activeButton = navbar.getButtonByDivId(navbar.activeButton.div.id);
+			console.log(navbar.activeButton);
+			if (navbar.tryMoveButton(navbar.activeButton)) {
+				console.log('tryMoveButton: move successful');
+				navbar.updateButtonsPosition();
+			} else {
+				console.log('tryMoveButton: move not possible');
+				navbar.activeButton.div.style.left = `${navbar.initialoffsetX}px`;
+			}
+			navbar.activeButton.div.style.top = `${navbar.initialoffsetY}px`;
+		} else {
+			navbar.activeButton.div.callback(navbar.activeButton);
+		}
+		navbar.activeButton.div.style.cursor = 'pointer';
+		navbar.dragging = false;
+		navbar.activeButton = null;
+	});
+
+	return navbar;
+}
+
+function computeMinNavBarWidth(buttonsCellWidth, buttonsDefaultIndicies) {
 	let maxIndex = 0;
-	for (let i = 0; i < buttonsWidth.length; i++) {
+	for (let i = 0; i < buttonsCellWidth.length; i++) {
 		const defaultIndex = buttonsDefaultIndicies[i];
-		const width = buttonsWidth[i];
+		const width = buttonsCellWidth[i];
 		const buttonEnd = defaultIndex + width - 1;
 		if (buttonEnd > maxIndex) { maxIndex = buttonEnd; }
 	}
 	return maxIndex + 1;
 }
 
-function detectOverlap(buttonsWidth, buttonsDefaultIndicies, minNavBarWidth) {
+function detectOverlap(buttonsCellWidth, buttonsDefaultIndicies, minNavBarWidth) {
 	const navbar = new Array(minNavBarWidth).fill(false);
-	for (let i = 0; i < buttonsWidth.length; i++) {
+	for (let i = 0; i < buttonsCellWidth.length; i++) {
 		const defaultIndex = buttonsDefaultIndicies[i];
-		const width = buttonsWidth[i];
+		const width = buttonsCellWidth[i];
 		for (let j = 0; j < width; j++) {
 			const position = defaultIndex + j;
 			if (navbar[position]) { return true; }
@@ -31,56 +103,6 @@ function detectOverlap(buttonsWidth, buttonsDefaultIndicies, minNavBarWidth) {
 	}
 	return false;
 }
-
-// caller is responsible for creatin the div the navbar will be associated to
-// width is in number of cells
-// cellWidth is in pixels
-export function initNavbar(div, width, cellWidth, buttonsWidth, buttonsDefaultIndicies) {
-
-	// check that arguments are valid
-
-	if (cellWidth % 2 === 1) {
-		throw new Error("navbar: prefer even cellWidth");
-	}
-
-	let a = buttonsWidth.length;
-	let b = buttonsDefaultIndicies.length;
-	if (a === 0 || b === 0 || a !== b) {
-		throw new Error("navbar: buttonsWidth and buttonsDefaultIndicies must be of the same length");
-	}
-
-	const minNavBarWidth = computeMinNavBarWidth(buttonsWidth, buttonsDefaultIndicies);
-	if (minNavBarWidth > width) {
-		throw new Error("navbar: navbar width too short for the requested buttons");
-	}
-
-	if (detectOverlap(buttonsWidth, buttonsDefaultIndicies, minNavBarWidth)) {
-		throw new Error("navbar: overlapping buttons");
-	}
-
-	// init
-
-	const navbar = new Navbar(div, width, cellWidth);
-	document.body.appendChild(div);
-	for (let i = 0; i < buttonsWidth.length; i++) {
-		const index = buttonsDefaultIndicies[i];
-		const buttonDiv = document.createElement("div");
-		buttonDiv.className = "buttons";
-		buttonDiv.id = `button${i}`;
-		buttonDiv.style.left = `${index * cellWidth}px`;
-		buttonDiv.innerText = `Button ${i}`;
-		buttonDiv.callback = () => {
-			console.log(`Button ${i} called`);
-		};
-		div.appendChild(buttonDiv);
-		navbar.addButton(initButton(buttonDiv, buttonsDefaultIndicies[i], buttonsWidth[i], navbar));
-	}
-
-	return navbar;
-}
-
-// console.log(`navbarWidth = ${navbarWidth}\n${buttons}`);
-
 
 // generate indicies in an alternating pattern prioritizing right for odd sizes
 // going outward
@@ -117,13 +139,23 @@ function genIndicies2(n) {
 }
 
 export class Navbar {
-	buttons = [];
 	
-	constructor(div, width, cellWidth) {
+	constructor(div, cellWidth, cellPixelWidth, dragThreshold) {
 		this.div = div;
-		this.width = width;
 		this.cellWidth = cellWidth;
-		this.pixelWidth = width * cellWidth;
+		this.cellPixelWidth = cellPixelWidth;
+		this.pixelWidth = cellWidth * cellPixelWidth;
+		this.buttons = [];
+		this.activeButton = null;
+		this.dragging = null;
+		this.dragThreshold = dragThreshold;
+
+		this.offsetX = 0;
+		this.offsetY = 0;
+		this.initialX = 0;
+		this.initialY = 0;
+		this.initialoffsetX = 0;
+		this.initialoffsetY = 0;
 	}
 
 	addButton(button) {
@@ -135,24 +167,40 @@ export class Navbar {
 	}
 
 	deepCopyButtons() {
-		return this.buttons.map(b => new Button(b.div, b.index, b.width, this));
+		return this.buttons.map(b => new NavbarButton(b.div, b.index, b.cellWidth, this));
 	}
 
 	indexOn(i) {
-		return i >= 0 && i < this.width;
+		return i >= 0 && i < this.cellWidth;
 	}
 
 	// perform the actual moves
 	updateButtonsPosition() {
 		this.buttons.forEach(b => {
-			b.div.style.left = `${b.index * this.cellWidth}px`;
+			b.div.style.left = `${b.index * this.cellPixelWidth}px`;
 		});
+	}
+
+	// return if the active button was moved
+	moveActiveButton(event) {
+		const currentX = event.clientX;
+		const currentY = event.clientY;
+		const deltaX = Math.abs(currentX - this.initialX);
+		const deltaY = Math.abs(currentY - this.initialY);
+		if (deltaX > this.dragThreshold || deltaY > this.dragThreshold) {
+			const x = currentX - this.offsetX;
+			const y = currentY - this.offsetY;
+			this.activeButton.div.style.left = `${x}px`;
+			this.activeButton.div.style.top = `${y}px`;
+			return true;
+		}
+		return false;
 	}
 
 	replaceButtons(src) {
 		const dst = this.buttons;
 		if (src.length !== dst.length) {
-			throw new Error("replaceButtons: impossible case reached");
+			throw new Error('replaceButtons: impossible case reached');
 			return;
 		}
 		// console.log(`copying ${src}`);
@@ -173,7 +221,7 @@ export class Navbar {
 	// `)
 		const tmp = new Set(); tmp.clear();
 		this.buttons.forEach((b, i) => {
-			for (let k = target; k < target + button.width; k++) {
+			for (let k = target; k < target + button.cellWidth; k++) {
 				if (b.indexOn(k) && b.div.id !== button.div.id) {
 					tmp.add(i);
 				}
@@ -197,24 +245,24 @@ export class Navbar {
 	// ${buttons}
 	// collisions =
 	// ${collisions}`);
-		// console.log("reOrderCollisions", {target});
+		// console.log('reOrderCollisions', {target});
 		// blackmagic to ensure we handle collisions in the most sensible manner
 		// alternating starts at the left or right depending on wether the button comes
 		// from the left or right of the target
 		// it also avoids a condition in the genIndicies function loop by comparing
-		// what function to use for odd and even button width here
+		// what function to use for odd and even button cellWidth here
 		const indices = (src < target
-			? (button.width % 2 === 0 ? genIndicies2 : genIndicies1)
-			: (button.width % 2 === 0 ? genIndicies1 : genIndicies2)
-		)(button.width);
-		// console.log("reOrderCollisions", {indices});
+			? (button.cellWidth % 2 === 0 ? genIndicies2 : genIndicies1)
+			: (button.cellWidth % 2 === 0 ? genIndicies1 : genIndicies2)
+		)(button.cellWidth);
+		// console.log('reOrderCollisions', {indices});
 		const tmp = new Set(); tmp.clear();
 		// backward since genIndicies functions give the indicies going outward
 		for (let i = indices.length - 1; i >= 0; i--) {
 			const navBarIndex = indices[i] + target;
-			// console.log("reOrderCollisions", {navBarIndex});
+			// console.log('reOrderCollisions', {navBarIndex});
 			if (!this.indexOn(navBarIndex)) {
-				throw new Error("collisionOrder: impossible case reached");
+				throw new Error('collisionOrder: impossible case reached');
 				continue;
 			}
 			collisions.forEach(collisionIndex => {
@@ -224,13 +272,13 @@ export class Navbar {
 			});
 		}
 		const r = Array.from(tmp);
-		// console.log("reOrderCollisions", {r});
+		// console.log('reOrderCollisions', {r});
 		return r;
 	}
 
-	// compute the "cost" of shifting left iButton so that
+	// compute the 'cost' of shifting left iButton so that
 	// it is outside of the forbidden area delimited by
-	// [ jTarget, jTarget + jButton.width [
+	// [ jTarget, jTarget + jButton.cellWidth [
 
 	// here jButton.index = jTarget already, the state of buttons is invalid
 	// applies any intermediate move directly in buttons for (eventual) recursive calls
@@ -252,7 +300,7 @@ export class Navbar {
 		let i = iButton.index;
 		let iTarget = i - 1;
 		if (iTarget < 0) { return Infinity; }
-		while (iTarget + iButton.width - 1 >= jButton.index) {
+		while (iTarget + iButton.cellWidth - 1 >= jButton.index) {
 			if (iTarget === 0) { return Infinity; }
 			iTarget--;
 		}
@@ -288,9 +336,9 @@ export class Navbar {
 		// `);
 		let i = iButton.index;
 		let iTarget = i + 1;
-		if (iTarget + iButton.width > this.width) { return Infinity; }
-		while (iTarget <= jButton.index + jButton.width - 1) {
-			if (iTarget + iButton.width === this.width) { return Infinity; }
+		if (iTarget + iButton.cellWidth > this.cellWidth) { return Infinity; }
+		while (iTarget <= jButton.index + jButton.cellWidth - 1) {
+			if (iTarget + iButton.cellWidth === this.cellWidth) { return Infinity; }
 			iTarget++;
 		}
 		let cost = iTarget - i;
@@ -353,15 +401,16 @@ export class Navbar {
 	// makes sure the state of buttons is correct upon exit
 	// the div of the given button is already where it wants to be moved
 	tryMoveButton(button) {
-		// console.log("tryMoveButton", {button, this.buttons});
+		// console.log('tryMoveButton', {button, this.buttons});
 		// make sure the move is possible while getting the target index
 		const target = button.isMovePossible();
+		// console.log(target);
 		if (isNaN(target)) { return false; }
-		// console.log("tryMoveButton", {target});
+		// console.log('tryMoveButton', {target});
 		const collisions = this.getCollisions(button, target);
-		// console.log("tryMoveButton", {collisions});
+		// console.log('tryMoveButton', {collisions});
 		const src = button.index;
-		// console.log("tryMoveButton", {src});
+		// console.log('tryMoveButton', {src});
 		// move the button where its div is
 		button.index = target;
 		// console.log(`button.index = ${button.index}`);

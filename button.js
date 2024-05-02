@@ -1,103 +1,71 @@
-import {
-	cellWidth,
-	navbarHeight,
-	dragThreshold,
-	navbarWidth,
-	buttonsWidth,
-	buttonsDefaultIndicies
-} from './config.js';
+'use strict';
 
-// globals used for the grabbing, dragging and dropping buttons part
+export function initButton(div, index, cellWidth, navbar) {
 
-let offsetX, offsetY, initialX, initialY, initialoffsetX, initialoffsetY;
-let activeButton = null;
-let dragging = false;
-
-// return if the active button was moved
-function moveActiveButton(event) {
-	const currentX = event.clientX;
-	const currentY = event.clientY;
-	const deltaX = Math.abs(currentX - initialX);
-	const deltaY = Math.abs(currentY - initialY);
-	if (deltaX > dragThreshold || deltaY > dragThreshold) {
-		const x = currentX - offsetX;
-		const y = currentY - offsetY;
-		activeButton.div.style.left = `${x}px`;
-		activeButton.div.style.top = `${y}px`;
-		return true;
+	if (cellWidth === 0) {
+		throw new Error('button\'s cellWidth of 0');
 	}
-	return false;
-}
 
-export function initButton(div, index, width, navbar) {
+	const button = new NavbarButton(div, index, cellWidth, navbar);
 
-	const button = new Button(div, index, width, navbar);
+	div.addEventListener('mousedown', (event) => {
+		if (navbar.activeButton !== null) {
+			// cursor speed exeeded browser's refresh rate or something
+			// and the user was able to let go of the hold and click back on the button
+			// while technically still in dragging
 
-	div.addEventListener("mousedown", (event) => {
-		activeButton = button;
-		initialX = event.clientX;
-		initialY = event.clientY;
-		offsetX = event.clientX - div.offsetLeft;
-		offsetY = event.clientY - div.offsetTop;
-		initialoffsetX = div.offsetLeft - dragThreshold;
-		initialoffsetY = div.offsetTop;
-		dragging = false;
-		div.style.cursor = "grabbing";
+			// we could reset:
+			// console.log('weird state, resetting active button');
+			// navbar.activeButton.div.style.left = `${navbar.initialoffsetX}px`;
+			// navbar.activeButton.div.style.top = `${navbar.initialoffsetY}px`;
+			// navbar.activeButton.div.style.cursor = 'pointer';
+			// navbar.dragging = false;
+			// navbar.activeButton = null;
+			
+			// or just ignore and continue with previous state:
+			return;
+		}
+		navbar.activeButton = button;
+		navbar.initialX = event.clientX;
+		navbar.initialY = event.clientY;
+		navbar.offsetX = event.clientX - div.offsetLeft;
+		navbar.offsetY = event.clientY - div.offsetTop;
+		navbar.initialoffsetX = div.offsetLeft - navbar.dragThreshold;
+		navbar.initialoffsetY = div.offsetTop;
+		navbar.dragging = false;
+		div.style.cursor = 'grabbing';
 		event.preventDefault();
 	});
 
-	div.addEventListener("mousemove", (event) => {
-		if (activeButton) { moveActiveButton(event); }
-	});
-
-	document.addEventListener("mouseup", (event) => {
-		if (activeButton === null) { return; }
-		if (moveActiveButton(event)) {
-			// console.log(`try moving button at offset ${initialoffsetX} to offset ${activeButton.div.offsetLeft}`);
-			// I hate JS
-			activeButton = navbar.getButtonByDivId(activeButton.div.id);
-			if (navbar.tryMoveButton(activeButton)) {
-				console.log("tryMoveButton: move successful");
-				navbar.updateButtonsPosition();
-			} else {
-				console.log("tryMoveButton: move not possible");
-				activeButton.div.style.left = `${initialoffsetX}px`;
-			}
-			activeButton.div.style.top = `${initialoffsetY}px`;
-		} else {
-			activeButton.div.callback();
-		}
-		activeButton.div.style.cursor = "pointer";
-		dragging = false;
-		activeButton = null;
+	div.addEventListener('mousemove', (event) => {
+		if (navbar.activeButton) { navbar.moveActiveButton(event); }
 	});
 
 	return button;
 }
 
 // a better class name would be NavbarButton since this Button makes no sense if not in a Navbar
-export class Button {
-	constructor(div, index, width, navbar) {
+export class NavbarButton {
+	constructor(div, index, cellWidth, navbar) {
 		this.div = div;
 		this.index = index;
-		this.width = width;
+		this.cellWidth = cellWidth;
 		this.navbar = navbar;
 	}
 
 	indexOn(i) {
-		return i >= this.index && i <= this.index + this.width - 1;
+		return i >= this.index && i <= this.index + this.cellWidth - 1;
 	}
 
 	// returns if where the div of the button is, the move would be possible
 	// and if so, returns the index in the navbar of where the div is
 	isMovePossible() {
-		const cellWidth = this.navbar.cellWidth;
-		const halfCellWidth = this.navbar.cellWidth / 2;
-		const visualOffset = this.div.offsetLeft + halfCellWidth;
-		// console.log({this, visualOffset, cellWidth, actualTotalNavbarWidth});
+		const cellPixelWidth = this.navbar.cellPixelWidth;
+		const halfcellPixelWidth = this.navbar.cellPixelWidth / 2;
+		const visualOffset = this.div.offsetLeft + halfcellPixelWidth;
 		if (visualOffset >= 0
-			&& this.div.offsetLeft <= this.navbar.pixelWidth - this.width * cellWidth + halfCellWidth) {
-			return Math.floor(visualOffset / cellWidth);
+			&& this.div.offsetLeft <= this.navbar.pixelWidth - this.cellWidth * cellPixelWidth + halfcellPixelWidth) {
+			return Math.floor(visualOffset / cellPixelWidth);
 		}
 		return NaN;
 	}
@@ -106,7 +74,7 @@ export class Button {
 		return `
 ${this.div.id}:
 index = ${this.index}
-width = ${this.width}
+cellWidth = ${this.cellWidth}
 `;
 	}
 }
