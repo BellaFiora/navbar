@@ -20,9 +20,13 @@ const navbarPixelHeight = cellPixelWidth;
 const navbarName = 'test';
 // how many pixels before a mouse movement is considered to be moving the button
 // holding the mouse click in this area will click the button when released
-// the area is a square of side dragThreshold * 2 + 1 pixels
-const dragThreshold = 3;
-const navbar = initNavbar(navbarName, navbarDiv, navbarWidth, cellPixelWidth, navbarPixelHeight, dragThreshold, buttonsWidth, buttonsDefaultIndicies, buttonsCallbacks);
+// the area is a square of side dragPixelThreshold * 2 + 1 pixels
+// same for dragTimeThreshold in milliseconds
+const dragPixelThreshold = 3;
+const dragTimeThreshold = 20;
+const navbar = initNavbar(navbarName, navbarDiv, navbarWidth, cellPixelWidth,
+	navbarPixelHeight, dragPixelThreshold, dragTimeThreshold,
+	buttonsWidth, buttonsDefaultIndicies, buttonsCallbacks);
 document.body.appendChild(navbarDiv);
 const actualNavbarWidth = navbarWidth * cellPixelWidth;
 
@@ -40,11 +44,11 @@ const navbarWidth2 = 10;
 const cellPixelWidth2 = 50;
 const navbarPixelHeight2 = cellPixelWidth2;
 const navbarName2 = 'test';
-// how many pixels before a mouse movement is considered to be moving the button
-// holding the mouse click in this area will click the button when released
-// the area is a square of side dragThreshold2 * 2 + 1 pixels
-const dragThreshold2 = 3;
-const navbar2 = initNavbar(navbarName2, navbarDiv2, navbarWidth2, cellPixelWidth2, navbarPixelHeight2, dragThreshold2, buttonsWidth2, buttonsDefaultIndicies2, buttonsCallbacks2);
+const dragPixelThreshold2 = 3;
+const dragTimeThreshold2 = 3000;
+const navbar2 = initNavbar(navbarName2, navbarDiv2, navbarWidth2, cellPixelWidth2,
+	navbarPixelHeight2, dragPixelThreshold2, dragTimeThreshold2,
+	buttonsWidth2, buttonsDefaultIndicies2, buttonsCallbacks2);
 document.body.appendChild(navbarDiv2);
 const actualNavbarWidth2 = navbarWidth2 * cellPixelWidth2;
 
@@ -108,7 +112,7 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	margin-left: ${dragThreshold}px;
+	margin-left: ${dragPixelThreshold}px;
 }
 
 .${navbarName2}-buttons {
@@ -119,7 +123,7 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	margin-left: ${dragThreshold2}px;
+	margin-left: ${dragPixelThreshold2}px;
 }
 
 #index-container {
@@ -149,7 +153,7 @@ body {
 	display:flex;
 	justify-content:center;
 	align-items:center;
-	margin-left: ${dragThreshold}px;
+	margin-left: ${dragPixelThreshold}px;
 }
 `;
 
@@ -157,8 +161,8 @@ for (let i = 0; i < buttonsWidth.length; i++) {
 	const buttonWidth = buttonsWidth[i] * cellPixelWidth;
 	styleContent += `#${navbarName}-button${i} {
 	background-color: lightblue;
-	width: ${buttonWidth - 2 * dragThreshold}px;
-	height: ${navbarPixelHeight - 2 * dragThreshold}px;
+	width: ${buttonWidth - 2 * dragPixelThreshold}px;
+	height: ${navbarPixelHeight - 2 * dragPixelThreshold}px;
 }`;
 }
 
@@ -166,8 +170,8 @@ for (let i = 0; i < buttonsWidth2.length; i++) {
 	const buttonWidth2 = buttonsWidth2[i] * cellPixelWidth2;
 	styleContent += `#${navbarName2}-button${i} {
 	background-color: lightblue;
-	width: ${buttonWidth2 - 2 * dragThreshold2}px;
-	height: ${navbarPixelHeight2 - 2 * dragThreshold2}px;
+	width: ${buttonWidth2 - 2 * dragPixelThreshold2}px;
+	height: ${navbarPixelHeight2 - 2 * dragPixelThreshold2}px;
 }`;
 }
 

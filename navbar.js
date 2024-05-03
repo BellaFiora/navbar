@@ -13,7 +13,7 @@ import {
 // name will be prepended to the className of all buttons of the navbar and their ids
 
 // if name = 'coolNavbar' then its buttons' className would be 'coolNavbar-buttons' and their ids `coolNavbar-button${i}`
-export function initNavbar(name, navbarDiv, cellWidth, cellPixelWidth, pixelHeight, dragThreshold, buttonsCellWidth, buttonsDefaultIndicies, buttonsCallbacks) {
+export function initNavbar(name, navbarDiv, cellWidth, cellPixelWidth, pixelHeight, dragPixelThreshold, dragTimeThreshold, buttonsCellWidth, buttonsDefaultIndicies, buttonsCallbacks) {
 
 	// check that arguments are valid
 
@@ -39,7 +39,7 @@ export function initNavbar(name, navbarDiv, cellWidth, cellPixelWidth, pixelHeig
 
 	// init
 
-	const navbar = new Navbar(navbarDiv, cellWidth, cellPixelWidth, pixelHeight, dragThreshold);
+	const navbar = new Navbar(navbarDiv, cellWidth, cellPixelWidth, pixelHeight, dragPixelThreshold, dragTimeThreshold);
 	for (let i = 0; i < buttonsCellWidth.length; i++) {
 		const index = buttonsDefaultIndicies[i];
 		const buttonDiv = document.createElement('div');
@@ -140,17 +140,20 @@ function genIndicies2(n) {
 
 export class Navbar {
 	
-	constructor(div, cellWidth, cellPixelWidth, pixelHeight, dragThreshold) {
+	constructor(div, cellWidth, cellPixelWidth, pixelHeight, dragPixelThreshold, dragTimeThreshold) {
 		this.div = div;
 		this.cellWidth = cellWidth;
 		this.cellPixelWidth = cellPixelWidth;
+		// maybe have a cellHeight
 		this.pixelHeight = pixelHeight;
 		this.pixelWidth = cellWidth * cellPixelWidth;
 		this.buttons = [];
+
+		this.dragPixelThreshold = dragPixelThreshold;
+		this.clickStartTime = 0;
+		this.dragTimeThreshold = dragTimeThreshold;
 		this.activeButton = null;
 		this.dragging = null;
-		this.dragThreshold = dragThreshold;
-
 		this.offsetX = 0;
 		this.offsetY = 0;
 		this.initialX = 0;
@@ -188,7 +191,8 @@ export class Navbar {
 		const currentY = event.clientY;
 		const deltaX = Math.abs(currentX - this.initialX);
 		const deltaY = Math.abs(currentY - this.initialY);
-		if (deltaX > this.dragThreshold || deltaY > this.dragThreshold) {
+		if ((deltaX > this.dragPixelThreshold || deltaY > this.dragPixelThreshold)
+			&& Date.now() - this.clickStartTime >= this.dragTimeThreshold) {
 			const x = currentX - this.offsetX;
 			const y = currentY - this.offsetY;
 			this.activeButton.div.style.left = `${x}px`;

@@ -25,12 +25,13 @@ export function initButton(div, index, cellWidth, navbar) {
 			// or just ignore and continue with previous state:
 			return;
 		}
+		navbar.clickStartTime = Date.now();
 		navbar.activeButton = button;
 		navbar.initialX = event.clientX;
 		navbar.initialY = event.clientY;
 		navbar.offsetX = event.clientX - div.offsetLeft;
 		navbar.offsetY = event.clientY - div.offsetTop;
-		navbar.initialoffsetX = div.offsetLeft - navbar.dragThreshold;
+		navbar.initialoffsetX = div.offsetLeft - navbar.dragPixelThreshold;
 		navbar.initialoffsetY = div.offsetTop;
 		navbar.dragging = false;
 		div.style.cursor = 'grabbing';
