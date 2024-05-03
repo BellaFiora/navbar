@@ -21,7 +21,7 @@ export function initButton(div, index, cellWidth, navbar) {
 			// navbar.activeButton.div.style.cursor = 'pointer';
 			// navbar.dragging = false;
 			// navbar.activeButton = null;
-			
+
 			// or just ignore and continue with previous state:
 			return;
 		}
@@ -57,16 +57,23 @@ export class NavbarButton {
 		return i >= this.index && i <= this.index + this.cellWidth - 1;
 	}
 
-	// returns if where the div of the button is, the move would be possible
-	// and if so, returns the index in the navbar of where the div is
+	// Returns whether the button's div is at least half inside the navbar horizontally and vertically
 	isMovePossible() {
 		const cellPixelWidth = this.navbar.cellPixelWidth;
-		const halfcellPixelWidth = this.navbar.cellPixelWidth / 2;
-		const visualOffset = this.div.offsetLeft + halfcellPixelWidth;
-		if (visualOffset >= 0
-			&& this.div.offsetLeft <= this.navbar.pixelWidth - this.cellWidth * cellPixelWidth + halfcellPixelWidth) {
-			return Math.floor(visualOffset / cellPixelWidth);
+		const halfCellPixelWidth = cellPixelWidth / 2;
+		const leftVisualOffset = this.div.offsetLeft + halfCellPixelWidth;
+		
+		const halfCellPixelHeight = this.navbar.pixelHeight / 2;
+		const topVisualOffset = this.div.offsetTop + halfCellPixelHeight;
+
+		if (leftVisualOffset >= 0
+			&& this.div.offsetLeft <= this.navbar.pixelWidth - this.cellWidth * cellPixelWidth + halfCellPixelWidth
+			&& topVisualOffset >= 0
+			&& this.div.offsetTop <= halfCellPixelHeight
+		) {
+			return Math.floor(leftVisualOffset / cellPixelWidth);
 		}
+
 		return NaN;
 	}
 

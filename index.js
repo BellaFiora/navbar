@@ -17,17 +17,18 @@ const buttonsDefaultIndicies = [0, 4, 5, 6, 7, 8, 3, 9];
 const buttonsCallbacks = new Array(buttonsWidth.length).fill(basicCallback);
 const navbarWidth = 10;
 const cellPixelWidth = 50;
+const navbarPixelHeight = cellPixelWidth;
 const navbarName = 'test';
 // how many pixels before a mouse movement is considered to be moving the button
 // holding the mouse click in this area will click the button when released
 // the area is a square of side dragThreshold * 2 + 1 pixels
 const dragThreshold = 3;
-const navbar = initNavbar(navbarName, navbarDiv, navbarWidth, cellPixelWidth, dragThreshold, buttonsWidth, buttonsDefaultIndicies, buttonsCallbacks);
+const navbar = initNavbar(navbarName, navbarDiv, navbarWidth, cellPixelWidth, navbarPixelHeight, dragThreshold, buttonsWidth, buttonsDefaultIndicies, buttonsCallbacks);
 document.body.appendChild(navbarDiv);
 
 // generate the associated CSS for this test navbar
 
-const navbarHeight = cellPixelWidth;
+
 const actualNavbarWidth = navbarWidth * cellPixelWidth;
 
 const styleElement = document.createElement('style');
@@ -50,7 +51,7 @@ body {
 	display: flex;
 	justify-content: flex-start;
 	position: relative;
-	height: ${navbarHeight}px;
+	height: ${navbarPixelHeight}px;
 	background-image: linear-gradient(
 		90deg, 
 		transparent ${cellPixelWidth / 2}px, 
@@ -79,7 +80,7 @@ body {
 	display: flex;
 	justify-content: flex-start;
 	position: relative;
-	height: ${navbarHeight}px;
+	height: ${navbarPixelHeight}px;
 	background-image: linear-gradient(
 		90deg, 
 		transparent ${cellPixelWidth / 2}px, 
@@ -111,7 +112,7 @@ for (let i = 0; i < buttonsWidth.length; i++) {
 	styleContent += `#${navbarName}-button${i} {
 	background-color: lightblue;
 	width: ${buttonWidth - 2 * dragThreshold}px;
-	height: ${navbarHeight - 2 * dragThreshold}px;
+	height: ${navbarPixelHeight - 2 * dragThreshold}px;
 }`;
 }
 
